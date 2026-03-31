@@ -5,7 +5,7 @@ const PORT = process.env.PORT || 3000;
 
 app.get("/", (req, res) => {
   res.json({
-    message: "Welcome to Ahmed's CI/CD App with Jenkins!",
+    message: "Hello to Ahmed's CI/CD App with Jenkins!",
     status: "running",
     version: "1.0.0"
   });

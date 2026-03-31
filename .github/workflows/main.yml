@@ -30,10 +30,10 @@ jobs:
         run: docker build -t my-app ./my-app
 
       - name: Tag image
-        run: docker tag my-app:latest 475411231343.dkr.ecr.us-east-1.amazonaws.com/my-app:latest
+        run: docker tag my-app:latest 475411231343.dkr.ecr.us-east-1.amazonaws.com/my-app:${{ github.sha }}
 
       - name: Push image
-        run: docker push 475411231343.dkr.ecr.us-east-1.amazonaws.com/my-app:latest
+        run: docker push 475411231343.dkr.ecr.us-east-1.amazonaws.com/my-app:${{ github.sha }}
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.6
@@ -43,17 +43,15 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           port: 22
           script: |
-            # 🔐 login ECR على السيرفر
+            # 🔐 login ECR
             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 475411231343.dkr.ecr.us-east-1.amazonaws.com
 
-            # 📦 سحب آخر image
-            docker pull 475411231343.dkr.ecr.us-east-1.amazonaws.com/my-app:latest
+             # 🧹 امسح القديم
+              docker rm -f my-app || true
+              docker rmi -f 475411231343.dkr.ecr.us-east-1.amazonaws.com/my-app:latest || true
 
-            # 🧹 تنظيف أي containers قديمة
-            docker rm -f my-app || true
+             # 📦 اسحب الجديد
+             docker pull 475411231343.dkr.ecr.us-east-1.amazonaws.com/my-app:latest
 
-            # 🔥 قفل أي حاجة ماسكة port 80
-            docker ps -q --filter "publish=80" | xargs -r docker rm -f
-
-            # 🚀 تشغيل الجديد
-            docker run -d -p 80:3000 --name my-app 475411231343.dkr.ecr.us-east-1.amazonaws.com/my-app:latest
+             # 🚀 شغل الجديد
+             docker run -d -p 80:3000 --name my-app 475411231343.dkr.ecr.us-east-1.amazonaws.com/my-app:latest
